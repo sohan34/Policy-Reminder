@@ -1,0 +1,43 @@
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+
+allprojects {
+    buildscript {
+        repositories {
+            maven {
+                url "https://repo.maven.apache.org/maven2"
+                allowInsecureProtocol = true
+                authentication {
+                    // No auth
+                }
+            }
+        }
+    }
+    repositories {
+         maven {
+            url "https://repo.maven.apache.org/maven2"
+            allowInsecureProtocol = true
+        }
+    }
+}
+
+// Disable SSL validation
+try {
+    def trustAllCerts = [
+        new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() { return null }
+            public void checkClientTrusted(X509Certificate[] certs, String authType) {}
+            public void checkServerTrusted(X509Certificate[] certs, String authType) {}
+        }
+    ] as TrustManager[]
+
+    def sc = SSLContext.getInstance("SSL")
+    sc.init(null, trustAllCerts, new SecureRandom())
+    javax.net.ssl.HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory())
+    javax.net.ssl.HttpsURLConnection.setDefaultHostnameVerifier({ hostname, session -> true })
+} catch (Exception e) {
+    // ignore
+}
